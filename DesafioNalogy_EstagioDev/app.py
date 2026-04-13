@@ -22,7 +22,7 @@ def calcular_cashback(valor_compra, desconto, cliente_vip=False):
 
 #conexão com banco
 def conectar_db():
-    return psycopg2.connect(os.environ.get("DATABASE_URL"))
+    return psycopg2.connect(os.environ.get("postgresql://postgres:ApryEkuaIyVDppyDsYVEbviKkAhhBscK@yamanote.proxy.rlwy.net:48507/railway"))
 
 
 #rota para calcular cashback
