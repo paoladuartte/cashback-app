@@ -4,26 +4,41 @@ import os
 
 app = Flask(__name__)
 
-#função calculos dos descontos
+def conectar_db():
+    return psycopg2.connect(os.environ.get("DATABASE_URL"))
+
+def criar_tabela():
+    conn = conectar_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS consultas (
+        id SERIAL PRIMARY KEY,
+        ip VARCHAR(50),
+        tipo_cliente VARCHAR(10),
+        valor NUMERIC,
+        cashback NUMERIC
+    );
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+#função de cálculo de cashback
 def calcular_cashback(valor_compra, desconto, cliente_vip=False):
     
-    valor_final = valor_compra * (1 - desconto)  # aplicação do desconto
+    valor_final = valor_compra * (1 - desconto)
 
-    cashback = valor_final * 0.05  # cálculo cashback base
+    cashback = valor_final * 0.05
 
-    if cliente_vip:  # Bônus VIP (10% sobre o cashback base)
+    if cliente_vip:
         cashback += cashback * 0.10 
 
-    if valor_final > 500:  # Promoção dobro de cashback se valor > 500
+    if valor_final > 500:
         cashback *= 2
 
     return round(cashback, 2)
-
-
-#conexão com banco
-def conectar_db():
-    return psycopg2.connect(os.environ.get("postgresql://postgres:ApryEkuaIyVDppyDsYVEbviKkAhhBscK@yamanote.proxy.rlwy.net:48507/railway"))
-
 
 #rota para calcular cashback
 @app.route("/cashback", methods=["POST"])
@@ -48,10 +63,12 @@ def cashback():
     cur.close()
     conn.close()
 
-    return jsonify({"cashback": resultado})
+    return jsonify({
+        "mensagem": "Compra registrada com sucesso! 🎉",
+        "cashback": resultado
+    })
 
-#rota de histórico
-
+# rota de histórico
 @app.route("/historico", methods=["GET"])
 def historico():
     conn = conectar_db()
@@ -69,6 +86,9 @@ def historico():
 
     return jsonify(dados)
 
-
+# inicia servidor
 if __name__ == "__main__":
-    app.run()
+    criar_tabela() 
+
+    port = int(os.environ.get("PORT", 3000))
+    app.run(host="0.0.0.0", port=port)
