@@ -1,12 +1,19 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import psycopg2
 import os
 
 app = Flask(__name__)
 
+# ROTA DO FRONTEND
+@app.route("/")
+def frontend():
+    return send_from_directory(".", "index.html")
+
+# CONEXÃO COM BANCO
 def conectar_db():
     return psycopg2.connect(os.environ.get("DATABASE_URL"))
 
+# CRIAR TABELA AUTOMATICAMENTE
 def criar_tabela():
     conn = conectar_db()
     cur = conn.cursor()
@@ -25,22 +32,22 @@ def criar_tabela():
     cur.close()
     conn.close()
 
-#função de cálculo de cashback
+# FUNÇÃO DE CÁLCULO
 def calcular_cashback(valor_compra, desconto, cliente_vip=False):
-    
+
     valor_final = valor_compra * (1 - desconto)
 
     cashback = valor_final * 0.05
 
     if cliente_vip:
-        cashback += cashback * 0.10 
+        cashback += cashback * 0.10
 
     if valor_final > 500:
         cashback *= 2
 
     return round(cashback, 2)
 
-#rota para calcular cashback
+# ROTA: CALCULAR CASHBACK
 @app.route("/cashback", methods=["POST"])
 def cashback():
     data = request.json
@@ -68,7 +75,7 @@ def cashback():
         "cashback": resultado
     })
 
-# rota de histórico
+# ROTA: HISTÓRICO
 @app.route("/historico", methods=["GET"])
 def historico():
     conn = conectar_db()
@@ -86,9 +93,9 @@ def historico():
 
     return jsonify(dados)
 
-# inicia servidor
-if __name__ == "__main__":
-    criar_tabela() 
 
+# INICIALIZAÇÃO
+if __name__ == "__main__":
+    criar_tabela()
     port = int(os.environ.get("PORT", 3000))
     app.run(host="0.0.0.0", port=port)
